@@ -2,6 +2,7 @@
 
 
 local DBI = require "DBI"
+local sqlconn = require "sqltable.connection"
 
 
 
@@ -16,6 +17,7 @@ local DBI = require "DBI"
 local _pool = {}
 
 
+
 --
 -- We need coroutine-safe pcall. Lua 5.2 can do it, but Lua 5.1
 -- needs a helper library to do it
@@ -24,6 +26,7 @@ local _pcall
 if _VERSION == 'Lua 5.1' then
 	assert(require "coxpcall", "coxpcall required for Lua 5.1")
 	_pcall = copcall
+	table.unpack = unpack
 else
 	_pcall = pcall
 end
@@ -31,6 +34,9 @@ end
 
 ---
 -- Opens a new connection.
+--
+-- @param params Table of named parameters (see LuaDBI for details)
+-- @return A new pool object
 --
 local function open( params )
 
@@ -43,42 +49,19 @@ local function open( params )
 			params.port or 5432
 		}
 		
-	local connection = assert(DBI.Connect(unpack(connect_args)))
+	local raw_conn = assert(DBI.Connect(table.unpack(connect_args)))
+	local connection = sqlconn.new( raw_conn )
 	
-	return {
-			connection = connection,
-			--statements = {}
-		}
-
-end
-
-
----
--- Set a debugging callback that displays code being passed through
--- this pool.
---
-function _pool.debugging( pool, fcn )
-
-	local meta = getmetatable(pool)
-	
-	-- nil means disable.
-	if not fcn then
-		meta.debugging = nil
-		return
-	end
-	
-	assert(
-		type(fcn) == 'function', 
-		'You lied to me when you told me this was a function.'
-	)
-	
-	meta.debugging = fcn
+	return connection
 
 end
 
 
 ---
 -- Return the type of database this pool connects to.
+--
+-- @param pool Pool to checked
+-- @return Database type of pool
 --
 function _pool.type( pool )
 	return getmetatable(pool).type
@@ -88,23 +71,19 @@ end
 ---
 -- Checkout a connection from the pool for use.
 --
+-- @param pool Pool to retrieve connection from
+-- @return A usable LuaDBI connection
+--
 function _pool.get( pool )
 
 	local meta = getmetatable(pool)
 	local ret = nil
 	
 	if #(meta.connections) > 0 then
-		--meta.outstanding = meta.outstanding + 1
 		ret = table.remove(meta.connections, 1)
 	else	
-		-- create a new one.
-		--meta.outstanding = meta.outstanding + 1
 		ret = open( meta.params )
 	end
-
-	-- make sure there isn't a transaction active with this
-	-- connection.
-	ret.connection:rollback()
 
 	meta.outstanding[ ret ] = true
 	return ret
@@ -114,19 +93,16 @@ end
 ---
 -- Return a connection to the pool.
 --
+-- @param pool Pool receiving connection
+-- @param connection Connection to be returned
+--
 function _pool.put( pool, connection )
 
 	local meta = getmetatable(pool)
 	
-	-- Guard against a particularly bad programming mistake
-	assert(
-		connection.connection, 
-		"This doesn't look like a valid database connection"
-	)
-	
 	-- make sure the connection is alive before placing it in the
-	-- pool.
-	if not connection.connection:ping() then 
+	-- pool. Maybe should remove this
+	if not connection.ping() then 
 		meta.outstanding[ connection ] = nil
 		return 
 	end
@@ -145,72 +121,11 @@ end
 
 
 ---
--- Helper function: wrap all DB operations in a try/catch
--- block to ensure we always return the database connection,
--- and in a sane state as well.
---
--- @param pool Pool being accessed
--- @param code SQL code to execute (string)
--- @param values Table of values to bind to SQL placeholders. 
---					Pass an empty table or nil if no data is to be
---					bound.
--- @param callback Callback function that receives the result of the
---					query. It is given two arguments: the connection
---					and a statement object. Both of these are raw LuaDBI
---					Userdata, consult it's manual for usage.
---
-function _pool.exec( pool, code, values, callback )
-
-	local meta = getmetatable(pool)
-	local xc = pool:get()
-	local statement = nil
-
-	values = values or {}
-
-	local success, err = _pcall(function()
-
-		if meta.debugging then
-			meta.debugging( code, values or {} )
-		end
-		statement = assert(xc.connection:prepare(code))
-
-		if values then
-			assert(statement:execute( unpack(values) ))
-		else
-			assert(statement:execute())
-		end
-		
-		-- callback is optional.
-		if callback then
-			callback( xc.connection, statement )
-		end
-	
-	end)
-
-	if not success then
-
-		if statement then
-			pcall(statement.close, statement)
-		end
-		
-		pcall(xc.connection.rollback, xc.connection)
-		pool:put(xc)
-	
-		-- bubble the error back to the top.
-		error(err)
-		
-	end
-		
-	statement:close()
-	xc.connection:commit()	
-	pool:put(xc)
-
-end
-
-
----
 -- Returns a count of the total number of connections this
 -- pool has open.
+--
+-- @param pool Pool to check
+-- @return Total number of connections in pool
 --
 function _pool.connections( pool )
 
@@ -223,6 +138,9 @@ end
 ---
 -- Returns a count of connections that exist, but are in use
 -- and not waiting in the pool.
+--
+-- @param pool Pool to check
+-- @return Number of outstanding connections in pool
 --
 function _pool.outstanding( pool )
 
@@ -241,14 +159,8 @@ end
 -- Since the connection could be bad, pcall() everything.
 --
 local function close_connection( connection )
-
-	--for i, statement in ipairs(connection.statements) do
-		--pcall(statement.close, statement)
-	--end
 		
-	if connection.connection:ping() then
-		pcall(connection.connection.close, connection.connection)
-	end
+	pcall(connection.close, connection)
 		
 end
 
@@ -259,6 +171,8 @@ end
 --
 -- THIS EXPLODES BADLY if there are outstanding connections not
 -- yet returned. Stop all queries before calling it!
+--
+-- @param pool Pool to close
 --
 function _pool.close( pool )
 
@@ -289,6 +203,8 @@ end
 -- with just one. This is handy if your program forks and/or you
 -- want to recycle all file handles.
 --
+-- @param pool Pool to reset
+--
 function _pool.reset( pool )
 
 	local meta = getmetatable(pool)
@@ -309,7 +225,7 @@ function _pool.reset( pool )
 end
 
 
----
+--
 -- Methods for the pool object.
 --
 local _methods = {

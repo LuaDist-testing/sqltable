@@ -48,7 +48,7 @@ echo "======"
 echo "Check Version Number"
 echo "======"
 
-v1=`lua ./printver.lua`
+v1=`./printver.lua`
 v2="$VERSION `date +%Y.%m%d`"
 
 echo $v1

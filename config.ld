@@ -5,5 +5,6 @@ file = {
 	"sqltable.lua", 
 	"sqltable/env.lua", 
 	"sqltable/pool.lua", 
-	"sqltable/table.lua" 
+	"sqltable/table.lua",
+	"sqltable/connection.lua"
 }

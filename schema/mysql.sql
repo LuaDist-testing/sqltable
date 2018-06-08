@@ -1,6 +1,6 @@
 
 --
--- SQL test data for PostgreSQL
+-- SQL test data for MySQL
 --
 
 drop table if exists table1 cascade;

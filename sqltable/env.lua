@@ -9,8 +9,17 @@
 local s_table = require "sqltable.table"
 
 
+local _pcall
+if _VERSION == 'Lua 5.1' then
+	assert(require "coxpcall", "coxpcall required for Lua 5.1")
+	_pcall = copcall
+else
+	_pcall = pcall
+end
+
+
 ---
---@class SqlEnvironment
+-- SqlEnvironment
 --
 local _sqltable_env = {}
 
@@ -19,7 +28,7 @@ local _sqltable_env = {}
 -- Returns how many connections SqlTable has open
 -- to the database.
 --
--- @param this @{sqltable.env} Environment object
+-- @param this Environment object
 -- @return Number of existant connections
 --
 function _sqltable_env.connections( this )
@@ -30,7 +39,7 @@ end
 ---
 -- Shuts down this environment.
 --
--- @param this @{sqltable.env} Environment object being closed
+-- @param this Environment object being closed
 -- @return Nothing.
 --
 function _sqltable_env.close( this )
@@ -45,7 +54,7 @@ end
 -- This method comes in handy should your Lua script fork into a second
 -- process.
 --
--- @param this @{sqltable.env} Environment object being reset
+-- @param this Environment object being reset
 -- @return Nothing.
 --
 function _sqltable_env.reset( this )
@@ -91,7 +100,78 @@ _sqltable_env.next = s_table.next
 --)
 --
 function _sqltable_env.exec( this, query, values, callback )
-	return this.pool:exec( query, values, callback )
+	
+	local connection = this.pool:get()
+	local res, err = _pcall(function()
+		this:exec_internal( connection, query, values, callback )
+	end)
+	
+	if not res then
+		connection:rollback()
+		this.pool:put(connection)
+		error(err)
+	end
+
+	connection:commit()
+	this.pool:put(connection)
+
+end
+
+
+--
+-- Execute with the specified database handle instead. No transaction
+-- details.
+--
+-- @param this Environment object
+-- @param[opt] connection Connection handle to use, if in a transaction
+-- @param query Text of SQL query to execute
+-- @param[opt] values Table of values to bind to the query (if needed)
+-- @param[opt] callback Function that is called to handle returned data
+--
+function _sqltable_env.exec_internal( this, connection, query, values, callback )
+
+	local statement = nil
+	local in_transaction = false
+
+	values = values or {}
+	assert(connection, "Need a connection to execute")
+
+	local success, err = _pcall(function()
+	
+		if this.debug_hook then
+			this.debug_hook( query, values or {} )
+		end
+		
+		statement = assert(connection:prepare(query))
+
+		if values then
+			assert(statement:execute( table.unpack(values) ))
+		else
+			assert(statement:execute())
+		end
+		
+		-- callback is optional.
+		if callback then
+			callback( connection, statement )
+		end
+	
+	end)
+
+	if not success then
+
+		-- delete a statement if it did successfully prepare,
+		-- to clear out any error states
+		if statement then
+			connection:purge(query)
+		end
+		
+		connection.rollback()
+		
+		-- bubble the error back to the top.
+		error(err)
+		
+	end
+
 end
 
 
@@ -240,7 +320,20 @@ end
 -- db.env:debugging( sql_debug )
 --
 function _sqltable_env.debugging( this, fcn )
-	return this.pool:debugging(fcn)
+
+	-- nil means disable.
+	if not fcn then
+		this.debug_hook = nil
+		return
+	end
+	
+	assert(
+		type(fcn) == 'function', 
+		'You lied to me when you told me this was a function.'
+	)
+	
+	this.debug_hook = fcn
+	
 end
 
 
@@ -320,6 +413,81 @@ function _sqltable_env.iclone( tbl, where, ... )
 	end
 
 	return ret
+	
+end
+
+
+---
+-- Start a consistant transaction on a table.
+--
+-- The table will be locked to a single SQL connection with
+-- autocommit mode disabled and a new transaction started.
+-- You will need to call 'commit' or 'rollback' before the table
+-- is garbage collected, or a SQL connection will be leaked.
+--
+-- @param this SqlTable environment
+-- @param tbl Table transaction is starting on
+--
+function _sqltable_env.begin_transaction( this, tbl )
+
+	assert(this)
+	assert(tbl, "Table not provided")
+
+	local data = getmetatable(tbl)
+	assert(not data.connection, "Table already in transaction")
+	
+	data.connection = this.pool:get()
+
+end
+
+
+---
+-- Commit a table's transaction.
+--
+-- All changes to the table will be saved. The SQL connection will be 
+-- returned to the pool and set back to autocommit mode.
+--
+-- @param this SqlTable environment
+-- @param tbl Table to commit to transaction on
+--
+function _sqltable_env.commit( this, tbl )
+
+	assert(this)
+	assert(tbl, "Table not provided")
+	
+	local data = getmetatable(tbl)
+	assert(data.connection, "Table not in transaction")
+	
+	data.connection:commit()
+	
+	this.pool:put( data.connection )
+	data.connection = nil
+
+end
+
+
+---
+-- Rollback a table's transaction
+--
+-- All changes will be reverted back to when begin_transaction was
+-- run. The SQL connection will be returned to the pool and set back
+-- to autocommit mode.
+--
+-- @param this SqlTable environment
+-- @param tbl Table to rollback transaction on
+--
+function _sqltable_env.rollback( this, tbl )
+
+	assert(this)
+	assert(tbl, "Table not provided")
+	
+	local data = getmetatable(tbl)
+	assert(data.connection, "Table not in transaction")
+	
+	data.connection:rollback()
+	
+	this.pool:put( data.connection )
+	data.connection = nil
 	
 end
 

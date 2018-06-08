@@ -47,14 +47,25 @@ local methods = {
 			
 			data[ table_state.key ] = key
 	
-			-- not a very good way to check if we have to insert or
-			-- update, but then again, some databases don't have an
-			-- upsert command.
-			
-			if _table.select( t, key ) then
-				_table.update( t, data )
+
+			--
+			-- If we have an upsert method, use it
+			--
+			if _table.upsert then
+				_table.upsert( t, data )
 			else
-				_table.insert( t, data )
+				--
+				-- fallback for no upsert support
+				--
+				-- not a very good way to check if we have to insert or
+				-- update, but then again, some databases don't have an
+				-- upsert command.
+				--
+				if _table.select( t, key ) then
+					_table.update( t, data )
+				else
+					_table.insert( t, data )
+				end
 			end
 	
 		else
@@ -85,7 +96,7 @@ local methods = {
 	
 	
 	--
-	-- Lua 5.2 support, currently untested.
+	-- Lua 5.2 support
 	--
 	__pairs = function ( t )
 		return _table.all_rows(t)
@@ -93,6 +104,10 @@ local methods = {
 	
 	__ipairs = function ( t )
 		return _table.all_rows(t)
+	end,
+
+	__len = function ( t )
+		return _table.count(t)
 	end
 
 }
@@ -162,7 +177,11 @@ local function rows( data, code, values )
 	end
 
 	return coroutine.wrap( function() 
-		data.env:exec( code, values, func )
+		if data.connection then
+			data.env:exec_nopool( data.connection, code, values, func )
+		else
+			data.env:exec( code, values, func )
+		end
 	end)
 	
 end
@@ -209,18 +228,16 @@ function _table.select( t, key )
 	local values = { key }
 	
 	
-	env:exec( code, values, function( connection, statement )
+	local callback = function( connection, statement )
 		row = statement:fetch(true)
-			
-		--if row then
-			--local rows = statement:rowcount()
-			--assert(
-				--rows == 1, 
-				--"Got " .. tostring(rows) .. " rows, expected 1"
-			--)
-		--end
-	end )
+	end
 	
+	if data.connection then
+		env:exec_internal( data.connection, code, values, callback )
+	else
+		env:exec( code, values, callback )
+	end
+
 	if row then
 		return env.db_hooks.post_processor( data.vendor, row )
 	end
@@ -247,9 +264,16 @@ function _table.count( t, where, ... )
 		values = {...}
 	end
 	
-	env:exec( code, values, function( connection, statement )
+	
+	local callback = function( connection, statement )
 		row = statement:fetch(true)
-	end )
+	end
+	
+	if data.connection then
+		env:exec_internal( data.connection, code, values, callback )
+	else
+		env:exec( code, values, callback )
+	end
 	
 	return row.num
 	
@@ -279,21 +303,19 @@ function _table.insert( t, row )
 		)
 				
 	local last_insert = nil
-	
-	env:exec( code, values, function( connection, statement )
-		
-		assert(
-			statement:affected() == 1, 
-			tostring(statement:affected()) .. " rows effected, should be exactly 1"
-		)
-		
+	local callback = function( connection, statement )	
 		last_insert = env.db_hooks.get_last_key( 
 			data.key, 
 			connection, 
 			statement 
-		)
-		
-	end)
+		)		
+	end
+	
+	if data.connection then
+		env:exec_internal( data.connection, code, values, callback )
+	else
+		env:exec( code, values, callback )
+	end
 
 	data.last_insert_id = last_insert
 	return last_insert
@@ -326,12 +348,11 @@ function _table.update( t, row )
 	assert(row[data.key], "Update didn't specify the primary key.")
 	table.insert(values, row[data.key])
 	
-	env:exec( code, values, function( connection, statement ) 
-		assert(
-			statement:affected() == 1, 
-			tostring(statement:affected()) .. " rows effected, should be exactly 1"
-		)
-	end)
+	if data.connection then
+		env:exec_internal( data.connection, code, values )
+	else
+		env:exec( code, values )
+	end
 	
 	return true
 
@@ -352,14 +373,13 @@ function _table.delete( t, row )
 		)
 		
 	assert(row[data.key], "Delete didn't specify the primary key")
-
-	env:exec( code, { row[data.key] }, function( connection, statement )
-		assert(
-			statement:affected() == 1, 
-			tostring(statement:affected()) .. " rows effected, should be exactly 1"
-		)
-	end)
-
+	
+	if data.connection then
+		env:exec_internal( data.connection, code, { row[data.key] } )
+	else
+		env:exec( code, { row[data.key] } )
+	end
+	
 	return true
 
 end

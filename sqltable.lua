@@ -6,7 +6,7 @@ local env = require "sqltable.env"
 
 
 --[[
-Copyright (c) 2013 Aaron B.
+Copyright (c) 2013-2017 Aaron B.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ local sqltable = {}
 
 
 --- Version of SqlTable in use.
-sqltable.VERSION = "1.0 2014.0206"
+sqltable.VERSION = "1.2 2017.0830"
 
 
 ---
@@ -89,6 +89,7 @@ function sqltable.connect( params )
 	
 	ret.pool = pool.connect( params )
 	ret.db_hooks = require("sqltable.drivers." .. params.type)
+	ret.debug_hook = nil
 	
 	return ret
 

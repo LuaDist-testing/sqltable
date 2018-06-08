@@ -6,7 +6,7 @@ return {
 	connection = {
 		type = 'PostgreSQL',
 		host = 'pgserver.zadzmo.org',
-		name = 'sqltable-test',
+		name = 'sqltable',
 		user = 'sqltable',
 		pass = 'testinguser-12345!!!'
 	},

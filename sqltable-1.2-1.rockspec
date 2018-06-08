@@ -2,7 +2,7 @@
 
 package = "sqltable"
 
-version = "1.0-1"
+version = "1.2-1"
 
 description = {
 	summary = "Database-to-Lua Mapper",
@@ -21,16 +21,17 @@ description = {
 
 -- LuaDist source
 source = {
-  tag = "1.0-1",
+  tag = "1.2-1",
   url = "git://github.com/LuaDist-testing/sqltable.git"
 }
 -- Original source
 -- source = {
--- 	url = "https://zadzmo.org/code/sqltable/downloads/sqltable-1.0.tar.gz"
+-- 	url = "https://zadzmo.org/code/sqltable/downloads/sqltable-1.2.tar.gz"
 -- }
 
 dependencies = {
-	"lua = 5.1", "luadbi", "coxpcall"
+	"lua >= 5.1, < 5.4", 
+	"luadbi"
 }
 
 build = {
@@ -40,6 +41,7 @@ build = {
 		["sqltable.pool"] = "sqltable/pool.lua",
 		["sqltable.env"] = "sqltable/env.lua",
 		["sqltable.table"] = "sqltable/table.lua",
+		["sqltable.connection"] = "sqltable/connection.lua",
 		["sqltable.drivers.PostgreSQL"] = "sqltable/drivers/PostgreSQL.lua",
 		["sqltable.drivers.MySQL"] = "sqltable/drivers/MySQL.lua",
 		["sqltable.drivers.SQLite3"] = "sqltable/drivers/SQLite3.lua"

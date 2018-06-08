@@ -33,16 +33,16 @@
 <h2>Contents</h2>
 <ul>
 <li><a href="#Functions">Functions</a></li>
-<li><a href="#Tables">Tables</a></li>
 </ul>
 
 
 <h2>Modules</h2>
-<ul>
+<ul class="nowrap">
   <li><a href="../modules/sqltable.html">sqltable</a></li>
   <li><a href="../modules/sqltable.env.html">sqltable.env</a></li>
   <li><strong>sqltable.pool</strong></li>
   <li><a href="../modules/sqltable.table.html">sqltable.table</a></li>
+  <li><a href="../modules/sqltable.connection.html">sqltable.connection</a></li>
 </ul>
 
 </div>
@@ -50,7 +50,6 @@
 <div id="content">
 
 <h1>Module <code>sqltable.pool</code></h1>
-
 <p>A connection pooling object.</p>
 <p>
 <p> This allows for lots of tables to be opened with only
@@ -63,100 +62,69 @@
 <h2><a href="#Functions">Functions</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#_pool.debugging">_pool.debugging&nbsp;(pool, fcn)</a></td>
-	<td class="summary">Set a debugging callback that displays code being passed through
- this pool.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#_pool.type">_pool.type&nbsp;(pool)</a></td>
+	<td class="name" nowrap><a href="#_pool.type">_pool.type (pool)</a></td>
 	<td class="summary">Return the type of database this pool connects to.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#_pool.get">_pool.get&nbsp;(pool)</a></td>
+	<td class="name" nowrap><a href="#_pool.get">_pool.get (pool)</a></td>
 	<td class="summary">Checkout a connection from the pool for use.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#_pool.put">_pool.put&nbsp;(pool, connection)</a></td>
+	<td class="name" nowrap><a href="#_pool.put">_pool.put (pool, connection)</a></td>
 	<td class="summary">Return a connection to the pool.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#_pool.exec">_pool.exec&nbsp;(pool, code, values, callback)</a></td>
-	<td class="summary">Helper function: wrap all DB operations in a try/catch
- block to ensure we always return the database connection,
- and in a sane state as well.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#_pool.connections">_pool.connections&nbsp;(pool)</a></td>
+	<td class="name" nowrap><a href="#_pool.connections">_pool.connections (pool)</a></td>
 	<td class="summary">Returns a count of the total number of connections this
  pool has open.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#_pool.outstanding">_pool.outstanding&nbsp;(pool)</a></td>
+	<td class="name" nowrap><a href="#_pool.outstanding">_pool.outstanding (pool)</a></td>
 	<td class="summary">Returns a count of connections that exist, but are in use
  and not waiting in the pool.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#_pool.close">_pool.close&nbsp;(pool)</a></td>
+	<td class="name" nowrap><a href="#_pool.close">_pool.close (pool)</a></td>
 	<td class="summary">Shuts down the pool.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#_pool.reset">_pool.reset&nbsp;(pool)</a></td>
+	<td class="name" nowrap><a href="#_pool.reset">_pool.reset (pool)</a></td>
 	<td class="summary">Resets a pool by closing all connections, then reconnecting
  with just one.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#_pool.connect">_pool.connect&nbsp;(params)</a></td>
+	<td class="name" nowrap><a href="#_pool.connect">_pool.connect (params)</a></td>
 	<td class="summary">"Connect" to a database.</td>
 	</tr>
 </table>
-<h2><a href="#Tables">Tables</a></h2>
-<table class="function_list">
-	<tr>
-	<td class="name" nowrap><a href="#_methods">_methods</a></td>
-	<td class="summary">Methods for the pool object.</td>
-	</tr>
-</table>
 
 <br/>
 <br/>
 
 
-    <h2><a name="Functions"></a>Functions</h2>
+    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+
     <dl class="function">
     <dt>
-    <a name = "_pool.debugging"></a>
-    <strong>_pool.debugging&nbsp;(pool, fcn)</strong>
-    </dt>
-    <dd>
-    Set a debugging callback that displays code being passed through
- this pool.
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">pool</span>
-        </li>
-        <li><span class="parameter">fcn</span>
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-    <dt>
     <a name = "_pool.type"></a>
-    <strong>_pool.type&nbsp;(pool)</strong>
+    <strong>_pool.type (pool)</strong>
     </dt>
     <dd>
     Return the type of database this pool connects to.
 
+
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">pool</span>
+         Pool to checked
         </li>
     </ul>
 
+    <h3>Returns:</h3>
+    <ol>
+
+        Database type of pool
+    </ol>
 
 
 
@@ -164,17 +132,24 @@
 </dd>
     <dt>
     <a name = "_pool.get"></a>
-    <strong>_pool.get&nbsp;(pool)</strong>
+    <strong>_pool.get (pool)</strong>
     </dt>
     <dd>
     Checkout a connection from the pool for use.
 
+
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">pool</span>
+         Pool to retrieve connection from
         </li>
     </ul>
 
+    <h3>Returns:</h3>
+    <ol>
+
+        A usable LuaDBI connection
+    </ol>
 
 
 
@@ -182,49 +157,20 @@
 </dd>
     <dt>
     <a name = "_pool.put"></a>
-    <strong>_pool.put&nbsp;(pool, connection)</strong>
+    <strong>_pool.put (pool, connection)</strong>
     </dt>
     <dd>
     Return a connection to the pool.
 
+
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">pool</span>
+         Pool receiving connection
         </li>
         <li><span class="parameter">connection</span>
+         Connection to be returned
         </li>
-    </ul>
-
-
-
-
-
-</dd>
-    <dt>
-    <a name = "_pool.exec"></a>
-    <strong>_pool.exec&nbsp;(pool, code, values, callback)</strong>
-    </dt>
-    <dd>
-    Helper function: wrap all DB operations in a try/catch
- block to ensure we always return the database connection,
- and in a sane state as well.
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">pool</span>
-         Pool being accessed</li>
-        <li><span class="parameter">code</span>
-         SQL code to execute (string)</li>
-        <li><span class="parameter">values</span>
-         Table of values to bind to SQL placeholders.
-					Pass an empty table or nil if no data is to be
-					bound.</li>
-        <li><span class="parameter">callback</span>
-         Callback function that receives the result of the
-					query. It is given two arguments: the connection
-					and a statement object. Both of these are raw LuaDBI
-					Userdata, consult it's manual for usage.
-</li>
     </ul>
 
 
@@ -234,18 +180,25 @@
 </dd>
     <dt>
     <a name = "_pool.connections"></a>
-    <strong>_pool.connections&nbsp;(pool)</strong>
+    <strong>_pool.connections (pool)</strong>
     </dt>
     <dd>
     Returns a count of the total number of connections this
  pool has open.
 
+
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">pool</span>
+         Pool to check
         </li>
     </ul>
 
+    <h3>Returns:</h3>
+    <ol>
+
+        Total number of connections in pool
+    </ol>
 
 
 
@@ -253,18 +206,25 @@
 </dd>
     <dt>
     <a name = "_pool.outstanding"></a>
-    <strong>_pool.outstanding&nbsp;(pool)</strong>
+    <strong>_pool.outstanding (pool)</strong>
     </dt>
     <dd>
     Returns a count of connections that exist, but are in use
  and not waiting in the pool.
 
+
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">pool</span>
+         Pool to check
         </li>
     </ul>
 
+    <h3>Returns:</h3>
+    <ol>
+
+        Number of outstanding connections in pool
+    </ol>
 
 
 
@@ -272,7 +232,7 @@
 </dd>
     <dt>
     <a name = "_pool.close"></a>
-    <strong>_pool.close&nbsp;(pool)</strong>
+    <strong>_pool.close (pool)</strong>
     </dt>
     <dd>
     Shuts down the pool.
@@ -280,9 +240,11 @@
  yet returned. Stop all queries before calling it!
 
 
+
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">pool</span>
+         Pool to close
         </li>
     </ul>
 
@@ -293,7 +255,7 @@
 </dd>
     <dt>
     <a name = "_pool.reset"></a>
-    <strong>_pool.reset&nbsp;(pool)</strong>
+    <strong>_pool.reset (pool)</strong>
     </dt>
     <dd>
     Resets a pool by closing all connections, then reconnecting
@@ -301,9 +263,11 @@
  want to recycle all file handles.
 
 
+
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">pool</span>
+         Pool to reset
         </li>
     </ul>
 
@@ -314,7 +278,7 @@
 </dd>
     <dt>
     <a name = "_pool.connect"></a>
-    <strong>_pool.connect&nbsp;(params)</strong>
+    <strong>_pool.connect (params)</strong>
     </dt>
     <dd>
     "Connect" to a database.  This opens the first connection to
@@ -322,39 +286,14 @@
  a pool object containing one connection.
 
 
+
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">params</span>
+
         </li>
     </ul>
 
-
-
-
-
-</dd>
-</dl>
-    <h2><a name="Tables"></a>Tables</h2>
-    <dl class="function">
-    <dt>
-    <a name = "_methods"></a>
-    <strong>_methods</strong>
-    </dt>
-    <dd>
-    Methods for the pool object.
-
-    <h3>Fields:</h3>
-    <ul>
-        <li><span class="parameter">__newindex</span>
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        set readonly
-
-    </ol>
 
 
 
@@ -366,7 +305,8 @@
 </div> <!-- id="content" -->
 </div> <!-- id="main" -->
 <div id="about">
-<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.3.12</a></i>
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2017-08-30 11:25:23 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>

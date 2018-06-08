@@ -112,8 +112,7 @@ end
 -- has different ways of handling this.
 --
 function sqlite.get_last_key( keyname, connection, statement )
-	-- not implemented in SQLite3, due to underlying LuaDBI
-	return nil
+	return connection:last_id()
 end
 
 
@@ -124,6 +123,7 @@ end
 --
 function sqlite.post_processor( vendor_data, data )
 
+	if not vendor_data then return data end
 	if not vendor_data.booleans then return data end
 
 	for i, v in ipairs(vendor_data.booleans) do
