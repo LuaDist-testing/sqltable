@@ -292,6 +292,9 @@ Changelog
    
  - Version 1.3
    - Connection Open hooks
+   
+ - Version 1.4
+   - Bugfixes
 
 
 Limitations 

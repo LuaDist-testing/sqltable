@@ -108,6 +108,14 @@ end
 
 
 ---
+-- Generates a Sqlite version number request.
+--
+function sqlite.version( )
+	return "select sqlite_version();"
+end
+
+
+---
 -- Extracts the new row ID from an insert statement. Every database
 -- has different ways of handling this.
 --

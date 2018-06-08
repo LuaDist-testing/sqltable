@@ -1,6 +1,6 @@
 package = "sqltable"
 
-version = "1.3-1"
+version = "1.4-1"
 
 description = {
 	summary = "Database-to-Lua Mapper",
@@ -18,7 +18,7 @@ description = {
 }
 
 source = {
-	url = "https://zadzmo.org/code/sqltable/downloads/sqltable-1.3.tar.gz"
+	url = "https://zadzmo.org/code/sqltable/downloads/sqltable-1.4.tar.gz"
 }
 
 dependencies = {

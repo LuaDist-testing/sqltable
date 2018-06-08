@@ -242,6 +242,29 @@ _sqltable_env.count = s_table.count
 
 
 ---
+-- Returns a version string identifying the version of the
+-- underlying database.
+--
+-- Please note that the exact format of the returned data may vary
+-- from database to database.
+--
+-- @return String containing version information
+--
+function _sqltable_env.version( this )
+
+	local vers = ""
+	
+	this:exec( this.db_hooks.version(), {}, function( conn, statement )
+        row = statement:fetch(false)
+        vers = row[1]
+	end )
+
+	return vers
+
+end
+
+
+---
 -- Execute a select all rows, returning an iterator. 
 --
 -- @param tbl Table to select from

@@ -107,6 +107,14 @@ end
 
 
 ---
+-- Generates a PostgreSQL version number request.
+--
+function postgres.version( )
+	return "select version();"
+end
+
+
+---
 -- Extracts the new row ID from an insert statement. Every database
 -- has different ways of handling this.
 --
@@ -127,6 +135,11 @@ end
 function postgres.post_processor( vendor_data, data )
 	return data
 end
+
+
+---
+-- 
+--
 
 
 return postgres

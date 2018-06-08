@@ -98,6 +98,14 @@ end
 
 
 ---
+-- Generates a MySQL version number request.
+--
+function mysql.version( )
+	return "select version();"
+end
+
+
+---
 -- Extracts the new row ID from an insert statement. Every database
 -- has different ways of handling this.
 --

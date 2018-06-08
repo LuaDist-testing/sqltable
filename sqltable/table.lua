@@ -178,7 +178,7 @@ local function rows( data, code, values )
 
 	return coroutine.wrap( function() 
 		if data.connection then
-			data.env:exec_nopool( data.connection, code, values, func )
+			data.env:exec_internal( data.connection, code, values, func )
 		else
 			data.env:exec( code, values, func )
 		end
@@ -308,7 +308,10 @@ function _table.insert( t, row )
 			data.key, 
 			connection, 
 			statement 
-		)		
+		)
+		
+		-- no-op: clear state of the statement handle
+		statement:rows()
 	end
 	
 	if data.connection then
@@ -342,6 +345,11 @@ function _table.update( t, row )
 		table.insert(values, v)
 	end
 	
+	local function callback( connection, statement )
+		-- no-op: clear state of the statement handle
+		statement:rows()
+	end
+	
 	-- add the primary key's value to the end, since it will always
 	-- be the last part of the update statement. We can't update
 	-- without it.
@@ -349,9 +357,9 @@ function _table.update( t, row )
 	table.insert(values, row[data.key])
 	
 	if data.connection then
-		env:exec_internal( data.connection, code, values )
+		env:exec_internal( data.connection, code, values, callback )
 	else
-		env:exec( code, values )
+		env:exec( code, values, callback )
 	end
 	
 	return true
@@ -371,13 +379,18 @@ function _table.delete( t, row )
 				data.name,  
 				data.key
 		)
+	
+	local function callback( connection, statement )
+		-- no-op: clear state of the statement handle
+		statement:rows()
+	end
 		
 	assert(row[data.key], "Delete didn't specify the primary key")
 	
 	if data.connection then
-		env:exec_internal( data.connection, code, { row[data.key] } )
+		env:exec_internal( data.connection, code, { row[data.key] }, callback )
 	else
-		env:exec( code, { row[data.key] } )
+		env:exec( code, { row[data.key] }, callback )
 	end
 	
 	return true

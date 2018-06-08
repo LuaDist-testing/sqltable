@@ -982,6 +982,28 @@ end
 
 
 --
+-- Test that you can iterate a table during a transaction.
+-- 
+function test_transaction_all_rows()
+
+	local t = gettable('table2')
+	env:begin_transaction(t)
+	local count = 0
+	
+	for i, row in env.all_rows(t) do
+		count = count + 1
+	end
+	assert.is_gte(0, count)
+	
+	local ncount = env.count( t )
+	assert.is_equal(count, ncount)
+	
+	env:commit(t)
+	
+end
+
+
+--
 -- Test the debugging hook.
 --
 function test_debugging_hook()
@@ -1106,6 +1128,16 @@ function test_execute_callback_fails()
 end
 
 
+--
+-- Test we can extract a version number.
+--
+function test_get_database_version()
+
+	assert.is_string( env:version() )
+
+end
+
+
 describe("PostgreSQL #psql", function()
 	db_type = "postgres"
 	config = dofile("test-configs/" .. db_type .. ".lua")
@@ -1145,6 +1177,7 @@ describe("PostgreSQL #psql", function()
 	it( "Won't double-commit a transaction", test_transaction_commit_fails )
 	it( "Won't open two transactions", test_transaction_begin_fails )
 	it( "Won't rollback a transaction twice", test_transaction_rollback_fails )
+	it( "Can iterate all rows during a transaction", test_transaction_all_rows )
 	it( "Fails when updating a read-only table", test_error_readonly )
 	it( "Rolls back a transaction on failures", test_error_rollback )
 	it( "Has a debugging hook", test_debugging_hook )
@@ -1153,6 +1186,7 @@ describe("PostgreSQL #psql", function()
 	it( "Can recover from a failed execute callback", test_execute_callback_fails )
 	it( "Can execute without a callback", test_execute_nocallback )
 	it( "Can recover if SQL code isn't valid", test_execute_prepare_fails )
+	it( "Can get a version number", test_get_database_version )
 		
 	if _VERSION ~= 'Lua 5.1' then
 		it( "Can count rows with the length operator", test_count_lenop )
@@ -1199,6 +1233,7 @@ describe("MySQL #mysql", function()
 	it( "Won't double-commit a transaction", test_transaction_commit_fails )
 	it( "Won't open two transactions", test_transaction_begin_fails )
 	it( "Won't rollback a transaction twice", test_transaction_rollback_fails )
+	it( "Can iterate all rows during a transaction", test_transaction_all_rows )
 	it( "Can clone into a temporary table, with integer keys", test_iclone )
 	it( "Can clone into an integer keys temp table, with a where clause ", test_iclone_where )
 	it( "Can count rows of a table", test_count )
@@ -1211,6 +1246,7 @@ describe("MySQL #mysql", function()
 	it( "Can recover from a failed execute callback", test_execute_callback_fails )
 	it( "Can execute without a callback", test_execute_nocallback )
 	it( "Can recover if SQL code isn't valid", test_execute_prepare_fails )
+	it( "Can get a version number", test_get_database_version )
 	
 	if _VERSION ~= 'Lua 5.1' then
 		it( "Can count rows with the length operator", test_count_lenop )
@@ -1257,6 +1293,7 @@ describe("SQLite3 #sqlite", function()
 	it( "Won't double-commit a transaction", test_transaction_commit_fails )
 	it( "Won't open two transactions", test_transaction_begin_fails )
 	it( "Won't rollback a transaction twice", test_transaction_rollback_fails )
+	it( "Can iterate all rows during a transaction", test_transaction_all_rows )
 	it( "Can clone into a temporary table, with integer keys", test_iclone )
 	it( "Can clone into an integer keys temp table, with a where clause ", test_iclone_where )
 	it( "Can count rows of a table", test_count )
@@ -1269,6 +1306,7 @@ describe("SQLite3 #sqlite", function()
 	it( "Can recover from a failed execute callback", test_execute_callback_fails )
 	it( "Can execute without a callback", test_execute_nocallback )
 	it( "Can recover if SQL code isn't valid", test_execute_prepare_fails )
+	it( "Can get a version number", test_get_database_version )
 	
 	if _VERSION ~= 'Lua 5.1' then
 		it( "Can count rows with the length operator", test_count_lenop )

@@ -360,7 +360,6 @@ function test_setup_hook()
 end
 
 
-
 describe("PostgreSQL #postgres", function()
 	db_type = "postgres"
 	config = dofile("test-configs/" .. db_type .. ".lua")

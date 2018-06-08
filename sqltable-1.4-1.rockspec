@@ -2,7 +2,7 @@
 
 package = "sqltable"
 
-version = "1.3-1"
+version = "1.4-1"
 
 description = {
 	summary = "Database-to-Lua Mapper",
@@ -21,12 +21,12 @@ description = {
 
 -- LuaDist source
 source = {
-  tag = "1.3-1",
+  tag = "1.4-1",
   url = "git://github.com/LuaDist-testing/sqltable.git"
 }
 -- Original source
 -- source = {
--- 	url = "https://zadzmo.org/code/sqltable/downloads/sqltable-1.3.tar.gz"
+-- 	url = "https://zadzmo.org/code/sqltable/downloads/sqltable-1.4.tar.gz"
 -- }
 
 dependencies = {
