@@ -36,7 +36,7 @@ local sqltable = {}
 
 
 --- Version of SqlTable in use.
-sqltable.VERSION = "1.2 2017.0830"
+sqltable.VERSION = "1.3 2017.1010"
 
 
 ---

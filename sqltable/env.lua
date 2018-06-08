@@ -63,6 +63,22 @@ end
 
 
 ---
+-- Provide a setup hook for new database connections that are opened,
+-- to configure any variables/PRAGMA options/etc that may be needed.
+--
+-- The pool will be reset once a hook is set, thus closing all
+-- open connections and reconnecting.
+--
+-- @param this Environment object being reset
+-- @param fcn Function to implement connection setup
+-- @return Nothing.
+--
+function _sqltable_env.setup_hook( this, fcn )
+	return this.pool:setup_hook( fcn )
+end
+
+
+---
 -- A 'magic' value: when inserting new rows with auto incrementing
 -- primary keys, we don't have a key yet. 
 --

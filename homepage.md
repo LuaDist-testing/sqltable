@@ -236,6 +236,20 @@ for a full explaination:
 	return row
 
 
+Sometimes, one needs to set up per-connection variables or connection
+specific options. A classic example is setting PRAGMA on SQLite3
+connections. Simply provide a function that will be passed the database
+connection object from LuaDBI when a connection is opened. Please
+note, this is the low level [LuaDBI](https://zadzmo.org/code/luadbi)
+API within:
+
+	sql:setup_hook( function( connection )
+
+		connection.prepare( ... )
+		--- more code
+
+	end )
+
 
 Requirements
 ------------
@@ -275,6 +289,9 @@ Changelog
    - Full support for MySQL, SQLite3
    - Full support for Lua 5.2 and 5.3
    - Prepared statement caching
+   
+ - Version 1.3
+   - Connection Open hooks
 
 
 Limitations 

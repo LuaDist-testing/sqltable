@@ -58,6 +58,18 @@ end
 
 
 ---
+-- Close the connection handed to us, for any reason.
+--
+-- Since the connection could be bad, pcall() everything.
+--
+local function close_connection( connection )
+		
+	pcall(connection.close, connection)
+		
+end
+
+
+---
 -- Return the type of database this pool connects to.
 --
 -- @param pool Pool to checked
@@ -83,6 +95,10 @@ function _pool.get( pool )
 		ret = table.remove(meta.connections, 1)
 	else	
 		ret = open( meta.params )
+			
+		if meta.setup_hook then
+			meta.setup_hook( ret )
+		end
 	end
 
 	meta.outstanding[ ret ] = true
@@ -108,14 +124,7 @@ function _pool.put( pool, connection )
 	end
 	
 	table.insert(meta.connections, connection)
-	
-	-- bootstrapping: outstanding is nil when the first connection
-	-- is handed to this method.
-	if not meta.outstanding then
-		meta.outstanding = {}
-	else
-		meta.outstanding[ connection ] = nil
-	end
+	meta.outstanding[ connection ] = nil
 
 end
 
@@ -130,7 +139,7 @@ end
 function _pool.connections( pool )
 
 	local meta = getmetatable(pool)
-	return #meta.connections + pool:outstanding()
+	return #(meta.connections) + pool:outstanding()
 
 end
 
@@ -151,19 +160,6 @@ function _pool.outstanding( pool )
 	return sum
 	
 end
-
-
----
--- Close the connection handed to us, for any reason.
---
--- Since the connection could be bad, pcall() everything.
---
-local function close_connection( connection )
-		
-	pcall(connection.close, connection)
-		
-end
-
 
 
 ---
@@ -219,10 +215,31 @@ function _pool.reset( pool )
 
 	-- reopen.
 	meta.connections = {}
-	meta.outstanding = nil
-	pool:put( open( meta.params ) )
+	meta.outstanding = {}
+	pool:put( pool:get() )
 
 end
+
+
+---
+-- Sets a 'setup hook' that will be called every time a new
+-- connection is opened.
+--
+-- The pool will be reset once a hook is set, thus closing all
+-- open connections and reconnecting.
+--
+-- @param pool this pool object
+-- @param fcn Setup hook to call
+-- @returns nothing
+--
+function _pool.setup_hook( pool, fcn )
+
+	meta = getmetatable(pool)
+	meta.setup_hook = fcn
+	pool:reset()
+
+end
+
 
 
 --
@@ -254,6 +271,7 @@ function _pool.connect( params )
 	local ret = {}
 	local ret_meta = {
 	
+		outstanding = {},
 		connections = {},
 		params = params,
 		type = params.type
@@ -270,7 +288,7 @@ function _pool.connect( params )
 	
 	ret.connect = nil
 	setmetatable(ret, ret_meta)
-	ret:put(open( params ))
+	ret:put( ret:get() )
 	
 	return ret
 	

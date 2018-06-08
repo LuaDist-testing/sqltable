@@ -337,6 +337,30 @@ function test_cache_prepare_failure()
 end
 
 
+--
+-- Test that a provided setup hook fires if configured.
+--
+function test_setup_hook()
+
+	local t = setup()
+	local hits = 0
+	
+	t:setup_hook( function( connection_handle )
+	
+		assert.is_not_nil(connection_handle)
+		hits = hits + 1
+	
+	end )
+	
+	assert.is_equal(1, hits)
+	-- one connection, already open, hit counter shouldn't move.
+	local conn = t:get()
+	assert.is_equal(1, hits)
+
+end
+
+
+
 describe("PostgreSQL #postgres", function()
 	db_type = "postgres"
 	config = dofile("test-configs/" .. db_type .. ".lua")
@@ -350,6 +374,7 @@ describe("PostgreSQL #postgres", function()
 	it( "Can cache prepared statements", test_cache )
 	it( "Can cache mulitple prepared statements", test_cache_multi )
 	it( "Doesn't cache statements if prepare fails", test_cache_prepare_failure )
+	it( "Provides a connection setup hook", test_setup_hook )
 
 end)
 
@@ -366,6 +391,7 @@ describe("MySQL #mysql", function()
 	it( "Can cache prepared statements", test_cache )
 	it( "Can cache mulitple prepared statements", test_cache_multi )
 	it( "Doesn't cache statements if prepare fails", test_cache_prepare_failure )
+	it( "Provides a connection setup hook", test_setup_hook )
 
 end)
 
@@ -382,5 +408,6 @@ describe("SQLite3 #sqlite", function()
 	it( "Can cache prepared statements", test_cache )
 	it( "Can cache mulitple prepared statements", test_cache_multi )
 	it( "Doesn't cache statements if prepare fails", test_cache_prepare_failure )
+	it( "Provides a connection setup hook", test_setup_hook )
 
 end)
