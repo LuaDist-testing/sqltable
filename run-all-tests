@@ -1,0 +1,15 @@
+#!/bin/sh
+
+dbs=`lua <<EOF
+sqltable=require 'sqltable'
+for k, v in pairs(sqltable.support) do print(v) end
+EOF` 
+
+#
+# XXX: Only PostgreSQL works currently.
+#
+for db in postgres
+do
+	echo $db
+	./test.lua $db
+done
